@@ -22,7 +22,7 @@ jobs:
         with:
           repository: Liquid9001/fotoshow
           path: fotoshow
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CHECKOUT_PAT }}
           fetch-depth: 1
 
       - name: Set up JDK
