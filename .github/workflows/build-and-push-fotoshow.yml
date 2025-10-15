@@ -17,10 +17,10 @@ jobs:
     steps:
       - name: Checkout pipeline repo
         uses: actions/checkout@v4
-      - name: Checkout Liquid9001/fotoshow source
+      - name: Checkout liquid9001/fotoshow source
         uses: actions/checkout@v4
         with:
-          repository: Liquid9001/fotoshow
+          repository: liquid9001/fotoshow
           path: fotoshow
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 1
