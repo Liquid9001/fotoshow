@@ -8,7 +8,8 @@ permissions:
   packages: write
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/fotoshow
+  # Base (may contain uppercase owner); we'll normalize per job
+  IMAGE_NAME_BASE: ghcr.io/${{ github.repository_owner }}/fotoshow
 
 jobs:
   build:
@@ -17,6 +18,7 @@ jobs:
     steps:
       - name: Checkout pipeline repo
         uses: actions/checkout@v4
+
       - name: Checkout liquid9001/fotoshow source
         uses: actions/checkout@v4
         with:
@@ -61,6 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Normalize image name (lowercase)
+        run: echo "IMAGE_NAME=$(echo '${{ env.IMAGE_NAME_BASE }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Download fotoshow workspace
         uses: actions/download-artifact@v4
         with:
@@ -91,6 +96,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: create-image
     steps:
+      - name: Normalize image name (lowercase)
+        run: echo "IMAGE_NAME=$(echo '${{ env.IMAGE_NAME_BASE }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -120,8 +128,11 @@ jobs:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
+          set -euo pipefail
           docker load -i /tmp/image.tar
-          for tag in $TAGS; do
+          # TAGS is a newline-separated list from metadata-action; iterate safely
+          echo "$TAGS" | while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
             echo "Tagging and pushing $tag"
             docker tag "$IMAGE_NAME:build-${GITHUB_SHA}" "$tag"
             docker push "$tag"
