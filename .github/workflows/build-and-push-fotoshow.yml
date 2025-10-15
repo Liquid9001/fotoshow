@@ -8,8 +8,8 @@ permissions:
   packages: write
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner && toLower(github.repository_owner) }}/fotoshow
-
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/fotoshow
+  LOWERCASE_USERNAME: ${{ github.actor }}
 
 jobs:
   build:
@@ -33,13 +33,15 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Convert username to lowercase
+        run: |
+          LOWERCASE_USERNAME=$(echo "${{ github.actor }}" | tr '[:upper:]' '[:lower:]')
+          echo "LOWERCASE_USERNAME=$LOWERCASE_USERNAME" >> $GITHUB_ENV
+
       - name: Maven build (package)
         if: ${{ hashFiles('fotoshow/pom.xml') != '' }}
         working-directory: fotoshow
         run: mvn -B -ntp -DskipTests package
-
-      - name: Set IMAGE_NAME to lowercase
-        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/fotoshow" >> $GITHUB_ENV
 
       - name: Maven test
         if: ${{ hashFiles('fotoshow/pom.xml') != '' }}
@@ -99,7 +101,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ env.LOWERCASE_USERNAME }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract Docker metadata (tags, labels)
